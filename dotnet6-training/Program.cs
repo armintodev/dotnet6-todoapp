@@ -1,9 +1,5 @@
 using dotnet6_training.Data;
-using dotnet6_training.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
-using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,7 +41,7 @@ app.MapGet
     ("/todo", async (TodoContext context, CancellationToken cancellationToken) =>
     {
         await Task.Delay(1000);
-        var todos = await context.Todos.ToListAsync(cancellationToken);
+        var todos = await context.Todos.OrderByDescending(_ => _.CreateDate).ToListAsync(cancellationToken);
         List<TodoResponse> response = todos.ToResponse();
         return response;
     });
