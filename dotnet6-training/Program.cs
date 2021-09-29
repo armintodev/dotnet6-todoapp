@@ -1,4 +1,6 @@
 using dotnet6_training.Data;
+using dotnet6_training.Data.Repository;
+using dotnet6_training.Services.TodoService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +17,9 @@ builder.Services.AddDbContext<TodoContext>(_ =>
 {
     _.UseSqlServer(builder.Configuration.GetConnectionString("TodoConnection"));
 });
+
+builder.Services.AddScoped<ITodoRepository, TodoRepository>();
+builder.Services.AddScoped<ITodoService, TodoService>();
 
 builder.Services.AddSwaggerGen(c =>
 {
