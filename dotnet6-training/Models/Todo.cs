@@ -33,6 +33,21 @@ public class Todo
     }
 
     /// <summary>
+    /// convert dto to domain model
+    /// </summary>
+    /// <param name="request">todo request information</param>
+    public static implicit operator Todo(EditTodoRequest request)
+    {
+        return new Todo
+        {
+            Id = request.Id,
+            Title = request.Title,
+            Description = request.Description,
+            CreateDate = DateTime.Now
+        };
+    }
+
+    /// <summary>
     /// convert domain model to response
     /// </summary>
     /// <param name="todo">single of a todo domain model</param>
