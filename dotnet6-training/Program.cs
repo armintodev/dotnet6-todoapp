@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,51 +48,70 @@ app.UseSwaggerUI(c =>
 });
 
 app.MapGet
-    ("/todo", async (TodoContext context, CancellationToken cancellationToken) =>
+    ("/todo", async (ITodoService service, CancellationToken cancellationToken) =>
     {
-        await Task.Delay(1000);
-        var todos = await context.Todos.OrderByDescending(_ => _.CreateDate).ToListAsync(cancellationToken);
-        List<TodoResponse> response = todos.ToResponse();
-        return response;
+        var todos = await service.GetAll(cancellationToken);
+
+        if (todos.ApiStatusCode is ApiStatusCode.Failed)
+        {
+            app.Logger.LogWarning(todos.Message);
+            throw new Exception(todos.Message);
+        }
+
+        return todos.Data;
     });
 
 app.MapGet
-    ("/todo/{id}", async (TodoContext context, int id) =>
+    ("/todo/{id}", async (ITodoService service, int id, CancellationToken cancellationToken) =>
     {
-        await Task.Delay(1000);
-        var todo = await context.Todos.FindAsync(id);
-        if (todo is null) throw new ArgumentNullException("The todo model not found");
-        TodoResponse response = todo;
-        return response;
+        var todo = await service.Find(id, cancellationToken);
+
+        if (todo.ApiStatusCode is ApiStatusCode.Failed)
+        {
+            app.Logger.LogWarning(todo.Message);
+            throw new Exception(todo.Message);
+        }
+
+        return todo.Data;
     });
 
-app.MapPost("/todo", async (TodoContext context, [FromForm] CreateTodoRequest request, CancellationToken cancellationToken) =>
+app.MapPost("/todo", async (ITodoService service, [FromForm] CreateTodoRequest request, CancellationToken cancellationToken) =>
 {
-    await Task.Delay(1000);
-    await context.Todos.AddAsync(request, cancellationToken);
-    await context.SaveChangesAsync();
+    var todo = await service.New(request, cancellationToken);
+
+    if (todo.ApiStatusCode is ApiStatusCode.Failed)
+    {
+        app.Logger.LogWarning(todo.Message);
+        throw new Exception(todo.Message);
+    }
+
+    return todo.Data;
 });
 
-app.MapPut("/todo", async (TodoContext context, [FromForm] EditTodoRequest request, CancellationToken cancellationToken) =>
+app.MapPut("/todo", async (ITodoService service, [FromForm] EditTodoRequest request, CancellationToken cancellationToken) =>
 {
-    await Task.Delay(1000);
-    var todo = await context.Todos.FindAsync(request.Id);
-    if (todo is null) throw new ArgumentNullException("The todo model not found");
-    todo.Edit(request.Title, request.Description);
-    await context.SaveChangesAsync();
+    var todo = await service.Modify(request, cancellationToken);
 
-    TodoResponse response = todo;
+    if (todo.ApiStatusCode is ApiStatusCode.Failed)
+    {
+        app.Logger.LogWarning(todo.Message);
+        throw new Exception(todo.Message);
+    }
 
-    return response;
+    return todo.Data;
 });
 
-app.MapDelete("/todo", async (TodoContext context, int id, CancellationToken cancellationToken) =>
+app.MapDelete("/todo", async (ITodoService service, int id, CancellationToken cancellationToken) =>
 {
-    await Task.Delay(1000);
-    var todo = await context.Todos.FindAsync(id);
-    if (todo is null) throw new ArgumentNullException("The todo model not found");
-    context.Todos.Remove(todo);
-    await context.SaveChangesAsync();
+    var todo = await service.Delete(id, cancellationToken);
+
+    if (todo.ApiStatusCode is ApiStatusCode.Failed)
+    {
+        app.Logger.LogWarning(todo.Message);
+        throw new Exception(todo.Message);
+    }
+
+    return todo.ApiStatusCode;
 });
 
 await app.RunAsync();
