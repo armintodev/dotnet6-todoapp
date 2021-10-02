@@ -1,6 +1,4 @@
-﻿using dotnet6_training.Models.Enums;
-
-namespace dotnet6_training.Models.OperationResult;
+﻿namespace dotnet6_training.Models.OperationResult;
 
 public class Result : IResult
 {
@@ -22,20 +20,20 @@ public class Result : IResult
         this.Message = message;
     }
 
-    public IResult StatusCode(ApiStatusCode statusCode)
+    public Result StatusCode(ApiStatusCode statusCode)
     {
         if (statusCode == ApiStatusCode.Success) this.SuccessStatusCode();
         else this.FailedStatusCode();
         return this;
     }
 
-    public IResult WithMessage(string message)
+    public Result WithMessage(string message)
     {
         this.NewMessage(message);
         return this;
     }
 
-    public IResult ToResult()
+    public Result ToResult()
     {
         return new Result
         {
@@ -53,20 +51,29 @@ public class Result<TData> : Result, IResult<TData> where TData : class
         Data = data;
     }
 
-    public new IResult<TData> StatusCode(ApiStatusCode statusCode)
+    public new Result<TData> StatusCode(ApiStatusCode statusCode)
     {
         if (statusCode == ApiStatusCode.Success) this.SuccessStatusCode();
         else this.FailedStatusCode();
         return this;
     }
 
-    public new IResult<TData> WithMessage(string message)
+    public new Result<TData> WithMessage(string message)
     {
         this.NewMessage(message);
         return this;
     }
 
-    public new IResult<TData> ToResult()
+    //public new IResult<TData> ToResult()
+    //{
+    //    return new Result<TData>(Data)
+    //    {
+    //        ApiStatusCode = this.ApiStatusCode,
+    //        Message = this.Message
+    //    };
+    //}
+
+    public new Result<TData> ToResult()
     {
         return new Result<TData>(Data)
         {
