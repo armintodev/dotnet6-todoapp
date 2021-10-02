@@ -14,7 +14,7 @@ public class TodoService : ITodoService
 
     public async Task<IResult<List<TodoResponse>>> GetAll(CancellationToken cancellationToken)
     {
-        var todos = await _todoRepository.Get().Data.ToListAsync(cancellationToken);
+        var todos = await _todoRepository.Get().Data.OrderByDescending(_ => _.CreateDate).ToListAsync(cancellationToken);
 
         var response = todos.ToResponse();
 

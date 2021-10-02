@@ -1,5 +1,4 @@
-﻿using dotnet6_training.Models.Enums;
-using dotnet6_training.Models.OperationResult;
+﻿using dotnet6_training.Models.OperationResult;
 
 namespace dotnet6_training.Data.Repository;
 
@@ -18,7 +17,7 @@ public class TodoRepository : ITodoRepository
 
     public async Task<IResult<Todo>> Get(int todoId, CancellationToken cancellationToken)
     {
-        return new Result<Todo>(await _context.Todos.FindAsync(todoId, cancellationToken)).StatusCode(ApiStatusCode.Success).ToResult();
+        return new Result<Todo>(await _context.Todos.SingleOrDefaultAsync(_ => _.Id.Equals(todoId), cancellationToken)).StatusCode(ApiStatusCode.Success).ToResult();
     }
 
     public async Task<IResult<Todo>> Add(Todo todo, CancellationToken cancellationToken)
