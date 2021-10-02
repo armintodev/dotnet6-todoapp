@@ -1,6 +1,7 @@
 using dotnet6_training.Data;
 using dotnet6_training.Data.Repository;
 using dotnet6_training.Services.TodoService;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 #region Builder
 
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddFluentValidation();
 
 builder.Services.AddDbContext<TodoContext>(_ =>
 {
@@ -82,10 +85,9 @@ app.MapPost("/todo", async (ITodoService service, [FromForm] CreateTodoRequest r
     if (todo.ApiStatusCode is ApiStatusCode.Failed)
     {
         app.Logger.LogWarning(todo.Message);
-        throw new Exception(todo.Message);
     }
 
-    return todo.Data;
+    return todo;
 });
 
 app.MapPut("/todo", async (ITodoService service, [FromForm] EditTodoRequest request, CancellationToken cancellationToken) =>
@@ -95,10 +97,9 @@ app.MapPut("/todo", async (ITodoService service, [FromForm] EditTodoRequest requ
     if (todo.ApiStatusCode is ApiStatusCode.Failed)
     {
         app.Logger.LogWarning(todo.Message);
-        throw new Exception(todo.Message);
     }
 
-    return todo.Data;
+    return todo;
 });
 
 app.MapDelete("/todo", async (ITodoService service, int id, CancellationToken cancellationToken) =>
@@ -108,10 +109,9 @@ app.MapDelete("/todo", async (ITodoService service, int id, CancellationToken ca
     if (todo.ApiStatusCode is ApiStatusCode.Failed)
     {
         app.Logger.LogWarning(todo.Message);
-        throw new Exception(todo.Message);
     }
 
-    return todo.ApiStatusCode;
+    return todo;
 });
 
 await app.RunAsync();
