@@ -1,6 +1,6 @@
 ﻿using dotnet6_training.Data.Repository;
-using dotnet6_training.Models.Enums;
 using dotnet6_training.Models.OperationResult;
+using dotnet6_training.Models.Validators;
 
 namespace dotnet6_training.Services.TodoService;
 
@@ -12,7 +12,7 @@ public class TodoService : ITodoService
         _todoRepository = todoRepository;
     }
 
-    public async Task<IResult<List<TodoResponse>>> GetAll(CancellationToken cancellationToken)
+    public async Task<Result<List<TodoResponse>>> GetAll(CancellationToken cancellationToken)
     {
         var todos = await _todoRepository.Get().Data.OrderByDescending(_ => _.CreateDate).ToListAsync(cancellationToken);
 
@@ -21,7 +21,7 @@ public class TodoService : ITodoService
         return new Result<List<TodoResponse>>(response).StatusCode(ApiStatusCode.Success).ToResult();
     }
 
-    public async Task<IResult<TodoResponse>> Find(int todoId, CancellationToken cancellationToken)
+    public async Task<Result<TodoResponse>> Find(int todoId, CancellationToken cancellationToken)
     {
         var todo = await _todoRepository.Get(todoId, cancellationToken);
 
@@ -32,9 +32,14 @@ public class TodoService : ITodoService
         return new Result<TodoResponse>(response).StatusCode(ApiStatusCode.Success).ToResult();
     }
 
-    public async Task<IResult<TodoResponse>> New(CreateTodoRequest request, CancellationToken cancellationToken)
+    public async Task<Result<TodoResponse>> New(CreateTodoRequest request, CancellationToken cancellationToken)
     {
-        //TODO:Automation Checking Todo Item will be implementing by FluentValidation
+        var validator = new CreateTodoRequestValidator();
+        var validation = await validator.ValidateAsync(request, cancellationToken);
+
+        if (!validation.IsValid)
+            return new Result<TodoResponse>(request).StatusCode(ApiStatusCode.Failed)
+                .WithMessage(validation.Errors.First().ErrorMessage).ToResult();
 
         var newTodo = await _todoRepository.Add(request, cancellationToken);
 
@@ -43,9 +48,14 @@ public class TodoService : ITodoService
         return new Result<TodoResponse>(response).StatusCode(ApiStatusCode.Success).ToResult();
     }
 
-    public async Task<IResult<TodoResponse>> Modify(EditTodoRequest request, CancellationToken cancellationToken)
+    public async Task<Result<TodoResponse>> Modify(EditTodoRequest request, CancellationToken cancellationToken)
     {
-        //TODO:Automation Checking Todo Item will be implementing by FluentValidation
+        var validator = new EditTodoRequestValidator();
+        var validation = await validator.ValidateAsync(request, cancellationToken);
+
+        if (!validation.IsValid)
+            return new Result<TodoResponse>(request).StatusCode(ApiStatusCode.Failed)
+                .WithMessage(validation.Errors.First().ErrorMessage).ToResult();
 
         var todo = await _todoRepository.Update(request, cancellationToken);
 
@@ -54,8 +64,12 @@ public class TodoService : ITodoService
         return new Result<TodoResponse>(response).StatusCode(ApiStatusCode.Success).ToResult();
     }
 
-    public async Task<IResult> Delete(int todoId, CancellationToken cancellationToken)
+    public async Task<Result> Delete(int todoId, CancellationToken cancellationToken)
     {
+        if (todoId.Equals(0))
+            return new Result().StatusCode(ApiStatusCode.Failed)
+                .WithMessage("todoId can't be 0").ToResult();
+
         var todo = await _todoRepository.Get(todoId, cancellationToken);
 
         await _todoRepository.Delete(todo.Data, cancellationToken);
