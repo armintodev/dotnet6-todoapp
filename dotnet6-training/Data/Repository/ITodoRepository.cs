@@ -4,6 +4,7 @@ namespace dotnet6_training.Data.Repository;
 
 public interface ITodoRepository
 {
+    Task<IResult<IReadOnlyList<Todo>>> ReadOnlyGet(CancellationToken cancellationToken);
     IResult<IQueryable<Todo>> Get();
     Task<IResult<Todo>> Get(int todoId, CancellationToken cancellationToken);
     Task<IResult<Todo>> Add(Todo todo, CancellationToken cancellationToken);
