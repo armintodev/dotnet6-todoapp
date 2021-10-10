@@ -1,5 +1,8 @@
 using dotnet6_training.Data;
 using dotnet6_training.Data.Repository;
+using dotnet6_training.Models.Configuration;
+using dotnet6_training.Models.Constants;
+using dotnet6_training.Services.CacheService;
 using dotnet6_training.Services.TodoService;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
@@ -8,10 +11,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using CacheSideOption = dotnet6_training.Models.Configuration.CacheSide;
+using CacheTech = dotnet6_training.Models.Constants.CacheSide;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
 
 #region Builder
+
+builder.Services.Configure<CacheSetting>(configuration.GetSection(CacheSettingConsts.CACHE_SETTING));
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -19,11 +27,24 @@ builder.Services.AddFluentValidation();
 
 builder.Services.AddDbContext<TodoContext>(_ =>
 {
-    _.UseSqlServer(builder.Configuration.GetConnectionString("TodoConnection"));
+    _.UseSqlServer(configuration.GetConnectionString("TodoConnection"));
 });
 
 builder.Services.AddScoped<ITodoRepository, TodoRepository>();
 builder.Services.AddScoped<ITodoService, TodoService>();
+
+builder.Services.AddTransient<MemoryCacheService>();
+builder.Services.AddTransient<RedisCacheService>();
+
+builder.Services.AddTransient<Func<CacheSideOption, ICacheService>>(serviceProvider => side =>
+{
+    return side.Tech switch
+    {
+        CacheTech.Memory => serviceProvider.GetService<MemoryCacheService>(),
+        CacheTech.Redis => serviceProvider.GetService<RedisCacheService>(),
+        _ => serviceProvider.GetService<MemoryCacheService>(),
+    };
+});
 
 builder.Services.AddSwaggerGen(c =>
 {
