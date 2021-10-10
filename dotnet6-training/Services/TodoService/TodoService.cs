@@ -12,6 +12,15 @@ public class TodoService : ITodoService
         _todoRepository = todoRepository;
     }
 
+    public async Task<Result<IReadOnlyList<TodoResponse>>> ReadOnlyGetAll(CancellationToken cancellationToken)
+    {
+        var todos = await _todoRepository.ReadOnlyGet(cancellationToken);
+
+        var response = todos.Data.ToResponse();
+
+        return new Result<IReadOnlyList<TodoResponse>>(response).StatusCode(ApiStatusCode.Success).ToResult();
+    }
+
     public async Task<Result<List<TodoResponse>>> GetAll(CancellationToken cancellationToken)
     {
         var todos = await _todoRepository.Get().Data.OrderByDescending(_ => _.CreateDate).ToListAsync(cancellationToken);
