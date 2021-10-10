@@ -1,57 +1,62 @@
 using dotnet6_training.Data;
 using dotnet6_training.Data.Repository;
 using dotnet6_training.Models.Configuration;
-using dotnet6_training.Models.Constants;
 using dotnet6_training.Services.CacheService;
 using dotnet6_training.Services.TodoService;
 using FluentValidation.AspNetCore;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using CacheSideOption = dotnet6_training.Models.Configuration.CacheSide;
-using CacheTech = dotnet6_training.Models.Constants.CacheSide;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
+var services = builder.Services;
 
 #region Builder
 
-builder.Services.Configure<CacheSetting>(configuration.GetSection(CacheSettingConsts.CACHE_SETTING));
+builder.Services.Configure<CacheSetting>(configuration.GetSection(ConfigurationConstants.CACHE_SETTING));
 
-builder.Services.AddEndpointsApiExplorer();
+services.AddControllers();
+services.AddEndpointsApiExplorer();
 
-builder.Services.AddFluentValidation();
+services.AddFluentValidation();
 
-builder.Services.AddDbContext<TodoContext>(_ =>
+services.AddDbContext<TodoContext>(_ =>
 {
-    _.UseSqlServer(configuration.GetConnectionString("TodoConnection"));
+    _.UseSqlServer(configuration.GetConnectionString(ConfigurationConstants.SQL_SERVER_CONNECTION_STRING));
 });
 
-builder.Services.AddScoped<ITodoRepository, TodoRepository>();
-builder.Services.AddScoped<ITodoService, TodoService>();
+services.AddMemoryCache();
 
-builder.Services.AddTransient<MemoryCacheService>();
-builder.Services.AddTransient<RedisCacheService>();
+services.AddScoped<ITodoRepository, TodoRepository>();
+services.AddScoped<ITodoService, TodoService>();
 
-builder.Services.AddTransient<Func<CacheSideOption, ICacheService>>(serviceProvider => side =>
+services.AddTransient<MemoryCacheService>();
+services.AddTransient<RedisCacheService>();
+
+services.AddTransient<Func<CacheSide, ICacheService>>(serviceProvider => side =>
 {
     return side.Tech switch
     {
-        CacheTech.Memory => serviceProvider.GetService<MemoryCacheService>(),
-        CacheTech.Redis => serviceProvider.GetService<RedisCacheService>(),
+        ConfigurationConstants.MEMORY => serviceProvider.GetService<MemoryCacheService>(),
+        ConfigurationConstants.REDIS => serviceProvider.GetService<RedisCacheService>(), //Redis Service not yet implemented
         _ => serviceProvider.GetService<MemoryCacheService>(),
     };
 });
 
-builder.Services.AddSwaggerGen(c =>
+services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Description = "Docs for my API", Version = "v1" });
 });
 
-builder.Services.BuildServiceProvider();
+services.AddHangfire(_ => _.UseSqlServerStorage(configuration.GetConnectionString(ConfigurationConstants.SQL_SERVER_CONNECTION_STRING)));
+services.AddHangfireServer();
+
+services.BuildServiceProvider();
 
 #endregion
 
@@ -70,6 +75,22 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
 });
+
+app.UseHangfireDashboard("/jobs");
+
+app.MapGet
+    ("/todoAsync", async (ITodoService service, CancellationToken cancellationToken) =>
+    {
+        var todos = await service.ReadOnlyGetAll(cancellationToken);
+
+        if (todos.ApiStatusCode is ApiStatusCode.Failed)
+        {
+            app.Logger.LogWarning(todos.Message);
+            throw new Exception(todos.Message);
+        }
+
+        return todos.Data;
+    });
 
 app.MapGet
     ("/todo", async (ITodoService service, CancellationToken cancellationToken) =>
