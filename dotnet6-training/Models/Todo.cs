@@ -67,6 +67,11 @@ public static class ConvertExtensions
         return todos.Select(_ => new TodoResponse(_.Id, _.Title, _.Description, _.CreateDate.ToString())).ToList();
     }
 
+    public static IReadOnlyList<TodoResponse> ToResponse(this IReadOnlyList<Todo> todos)
+    {
+        return todos.Select(_ => new TodoResponse(_.Id, _.Title, _.Description, _.CreateDate.ToString())).ToList();
+    }
+
     /// <summary>
     /// edit this todo domain model
     /// </summary>
