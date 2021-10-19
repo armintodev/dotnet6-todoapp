@@ -6,6 +6,7 @@ using dotnet6_training.Services.TodoService;
 using FluentValidation.AspNetCore;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -86,10 +87,10 @@ app.MapGet
         if (todos.ApiStatusCode is ApiStatusCode.Failed)
         {
             app.Logger.LogWarning(todos.Message);
-            throw new Exception(todos.Message);
+            return Results.BadRequest(todos.Message);
         }
 
-        return todos.Data;
+        return Results.Ok(todos.Data);
     });
 
 app.MapGet
@@ -100,10 +101,10 @@ app.MapGet
         if (todos.ApiStatusCode is ApiStatusCode.Failed)
         {
             app.Logger.LogWarning(todos.Message);
-            throw new Exception(todos.Message);
+            return Results.BadRequest(todos.Message);
         }
 
-        return todos.Data;
+        return Results.Ok(todos.Data);
     });
 
 app.MapGet
@@ -114,10 +115,10 @@ app.MapGet
         if (todo.ApiStatusCode is ApiStatusCode.Failed)
         {
             app.Logger.LogWarning(todo.Message);
-            throw new Exception(todo.Message);
+            return Results.BadRequest(todo.Message);
         }
 
-        return todo.Data;
+        return Results.Ok(todo.Data);
     });
 
 app.MapPost("/todo", async (ITodoService service, [FromForm] CreateTodoRequest request, CancellationToken cancellationToken) =>
@@ -127,9 +128,10 @@ app.MapPost("/todo", async (ITodoService service, [FromForm] CreateTodoRequest r
     if (todo.ApiStatusCode is ApiStatusCode.Failed)
     {
         app.Logger.LogWarning(todo.Message);
+        return Results.BadRequest(todo.Message);
     }
 
-    return todo;
+    return Results.Ok(todo);
 });
 
 app.MapPut("/todo", async (ITodoService service, [FromForm] EditTodoRequest request, CancellationToken cancellationToken) =>
@@ -139,9 +141,10 @@ app.MapPut("/todo", async (ITodoService service, [FromForm] EditTodoRequest requ
     if (todo.ApiStatusCode is ApiStatusCode.Failed)
     {
         app.Logger.LogWarning(todo.Message);
+        return Results.BadRequest(todo.Message);
     }
 
-    return todo;
+    return Results.Ok(todo);
 });
 
 app.MapDelete("/todo", async (ITodoService service, int id, CancellationToken cancellationToken) =>
@@ -151,9 +154,10 @@ app.MapDelete("/todo", async (ITodoService service, int id, CancellationToken ca
     if (todo.ApiStatusCode is ApiStatusCode.Failed)
     {
         app.Logger.LogWarning(todo.Message);
+        return Results.BadRequest(todo.Message);
     }
 
-    return todo;
+    return Results.Ok(todo);
 });
 
 await app.RunAsync();
