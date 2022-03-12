@@ -9,7 +9,7 @@ public class TodoConfiguration : IEntityTypeConfiguration<Todo>
         builder.HasKey(_ => _.Id);
 
         builder.Property(_ => _.Title)
-            .HasMaxLength(100)
+            .HasMaxLength(150)
             .IsRequired();
     }
 }
