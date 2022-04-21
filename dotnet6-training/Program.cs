@@ -3,8 +3,11 @@ using dotnet6_training.Data.Repository;
 using dotnet6_training.Models.Configuration;
 using dotnet6_training.Services.CacheService;
 using dotnet6_training.Services.TodoService;
+
 using FluentValidation.AspNetCore;
+
 using Hangfire;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -57,7 +60,17 @@ services.AddSwaggerGen(c =>
 services.AddHangfire(_ => _.UseSqlServerStorage(configuration.GetConnectionString(ConfigurationConstants.SQL_SERVER_CONNECTION_STRING)));
 services.AddHangfireServer();
 
-services.BuildServiceProvider();
+services.AddCors(_ =>
+{
+    _.AddPolicy("Js", policy =>
+    {
+        policy.WithOrigins("http://127.0.0.1:5500")
+        .AllowAnyHeader()
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
 
 #endregion
 
@@ -78,6 +91,8 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHangfireDashboard("/jobs");
+
+app.UseCors("Js");
 
 app.MapGet
     ("/todoAsync", async (ITodoService service, CancellationToken cancellationToken) =>
