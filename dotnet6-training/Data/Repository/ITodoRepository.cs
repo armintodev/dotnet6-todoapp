@@ -4,11 +4,11 @@ namespace dotnet6_training.Data.Repository;
 
 public interface ITodoRepository
 {
-    Task<IResult<IReadOnlyList<Todo>>> ReadOnlyGet(CancellationToken cancellationToken);
-    IResult<IQueryable<Todo>> Get();
-    Task<IResult<Todo>> Get(int todoId, CancellationToken cancellationToken);
-    Task<IResult<Todo>> Add(Todo todo, CancellationToken cancellationToken);
-    Task<IResult<Todo>> Update(Todo todo, CancellationToken cancellationToken);
-    Task<IResult> Delete(Todo todo, CancellationToken cancellationToken);
+    Task<IResponseResult<IReadOnlyList<Todo>>> ReadOnlyGet(CancellationToken cancellationToken);
+    IResponseResult<IQueryable<Todo>> Get();
+    Task<IResponseResult<Todo>> Get(int todoId, CancellationToken cancellationToken);
+    Task<IResponseResult<Todo>> Add(Todo todo, CancellationToken cancellationToken);
+    Task<IResponseResult<Todo>> Update(Todo todo, CancellationToken cancellationToken);
+    Task<IResponseResult> Delete(Todo todo, CancellationToken cancellationToken);
     Task Save(CancellationToken cancellationToken);
 }

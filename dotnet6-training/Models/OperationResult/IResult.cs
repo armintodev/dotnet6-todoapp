@@ -1,6 +1,6 @@
 ﻿namespace dotnet6_training.Models.OperationResult;
 
-public interface IResult
+public interface IResponseResult
 {
     ApiStatusCode ApiStatusCode { get; protected set; }
     public string Message { get; protected set; }
@@ -16,7 +16,7 @@ public interface IResult
     //public IResult ToResult();
 }
 
-public interface IResult<out TData> : IResult where TData : class
+public interface IResponseResult<out TData> : IResponseResult where TData : class
 {
     public TData Data { get; }
 

@@ -8,12 +8,6 @@ using FluentValidation.AspNetCore;
 
 using Hangfire;
 
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,7 +21,7 @@ builder.Services.Configure<CacheSetting>(configuration.GetSection(ConfigurationC
 services.AddControllers();
 services.AddEndpointsApiExplorer();
 
-services.AddFluentValidation();
+services.AddFluentValidationAutoValidation();
 
 services.AddDbContext<TodoContext>(_ =>
 {
@@ -64,11 +58,9 @@ services.AddCors(_ =>
 {
     _.AddPolicy("Js", policy =>
     {
-        policy.WithOrigins("http://127.0.0.1:5500")
+        policy.AllowAnyOrigin()
         .AllowAnyHeader()
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
+        .AllowAnyMethod();
     });
 });
 
@@ -136,7 +128,7 @@ app.MapGet
         return Results.Ok(todo.Data);
     });
 
-app.MapPost("/todo", async (ITodoService service, [FromForm] CreateTodoRequest request, CancellationToken cancellationToken) =>
+app.MapPost("/todo", async (ITodoService service, CreateTodoRequest request, CancellationToken cancellationToken) =>
 {
     var todo = await service.New(request, cancellationToken);
 
@@ -149,7 +141,7 @@ app.MapPost("/todo", async (ITodoService service, [FromForm] CreateTodoRequest r
     return Results.Ok(todo);
 });
 
-app.MapPut("/todo", async (ITodoService service, [FromForm] EditTodoRequest request, CancellationToken cancellationToken) =>
+app.MapPut("/todo", async (ITodoService service, EditTodoRequest request, CancellationToken cancellationToken) =>
 {
     var todo = await service.Modify(request, cancellationToken);
 

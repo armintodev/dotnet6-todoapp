@@ -12,25 +12,25 @@ public class TodoService : ITodoService
         _todoRepository = todoRepository;
     }
 
-    public async Task<Result<IReadOnlyList<TodoResponse>>> ReadOnlyGetAll(CancellationToken cancellationToken)
+    public async Task<ResponseResult<IReadOnlyList<TodoResponse>>> ReadOnlyGetAll(CancellationToken cancellationToken)
     {
         var todos = await _todoRepository.ReadOnlyGet(cancellationToken);
 
         var response = todos.Data.ToResponse();
 
-        return new Result<IReadOnlyList<TodoResponse>>(response).StatusCode(ApiStatusCode.Success).ToResult();
+        return new ResponseResult<IReadOnlyList<TodoResponse>>(response).StatusCode(ApiStatusCode.Success).ToResult();
     }
 
-    public async Task<Result<List<TodoResponse>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ResponseResult<List<TodoResponse>>> GetAll(CancellationToken cancellationToken)
     {
         var todos = await _todoRepository.Get().Data.OrderByDescending(_ => _.CreateDate).ToListAsync(cancellationToken);
 
         var response = todos.ToResponse();
 
-        return new Result<List<TodoResponse>>(response).StatusCode(ApiStatusCode.Success).ToResult();
+        return new ResponseResult<List<TodoResponse>>(response).StatusCode(ApiStatusCode.Success).ToResult();
     }
 
-    public async Task<Result<TodoResponse>> Find(int todoId, CancellationToken cancellationToken)
+    public async Task<ResponseResult<TodoResponse>> Find(int todoId, CancellationToken cancellationToken)
     {
         var todo = await _todoRepository.Get(todoId, cancellationToken);
 
@@ -38,51 +38,51 @@ public class TodoService : ITodoService
 
         TodoResponse response = todo.Data;
 
-        return new Result<TodoResponse>(response).StatusCode(ApiStatusCode.Success).ToResult();
+        return new ResponseResult<TodoResponse>(response).StatusCode(ApiStatusCode.Success).ToResult();
     }
 
-    public async Task<Result<TodoResponse>> New(CreateTodoRequest request, CancellationToken cancellationToken)
+    public async Task<ResponseResult<TodoResponse>> New(CreateTodoRequest request, CancellationToken cancellationToken)
     {
         var validator = new CreateTodoRequestValidator();
         var validation = await validator.ValidateAsync(request, cancellationToken);
 
         if (!validation.IsValid)
-            return new Result<TodoResponse>(request).StatusCode(ApiStatusCode.Failed)
+            return new ResponseResult<TodoResponse>(request).StatusCode(ApiStatusCode.Failed)
                 .WithMessage(validation.Errors.First().ErrorMessage).ToResult();
 
         var newTodo = await _todoRepository.Add(request, cancellationToken);
 
         TodoResponse response = newTodo.Data;
 
-        return new Result<TodoResponse>(response).StatusCode(ApiStatusCode.Success).ToResult();
+        return new ResponseResult<TodoResponse>(response).StatusCode(ApiStatusCode.Success).ToResult();
     }
 
-    public async Task<Result<TodoResponse>> Modify(EditTodoRequest request, CancellationToken cancellationToken)
+    public async Task<ResponseResult<TodoResponse>> Modify(EditTodoRequest request, CancellationToken cancellationToken)
     {
         var validator = new EditTodoRequestValidator();
         var validation = await validator.ValidateAsync(request, cancellationToken);
 
         if (!validation.IsValid)
-            return new Result<TodoResponse>(request).StatusCode(ApiStatusCode.Failed)
+            return new ResponseResult<TodoResponse>(request).StatusCode(ApiStatusCode.Failed)
                 .WithMessage(validation.Errors.First().ErrorMessage).ToResult();
 
         var todo = await _todoRepository.Update(request, cancellationToken);
 
         TodoResponse response = todo.Data;
 
-        return new Result<TodoResponse>(response).StatusCode(ApiStatusCode.Success).ToResult();
+        return new ResponseResult<TodoResponse>(response).StatusCode(ApiStatusCode.Success).ToResult();
     }
 
-    public async Task<Result> Delete(int todoId, CancellationToken cancellationToken)
+    public async Task<ResponseResult> Delete(int todoId, CancellationToken cancellationToken)
     {
         if (todoId.Equals(0))
-            return new Result().StatusCode(ApiStatusCode.Failed)
+            return new ResponseResult().StatusCode(ApiStatusCode.Failed)
                 .WithMessage("todoId can't be 0").ToResult();
 
         var todo = await _todoRepository.Get(todoId, cancellationToken);
 
         await _todoRepository.Delete(todo.Data, cancellationToken);
 
-        return new Result().StatusCode(ApiStatusCode.Success).ToResult();
+        return new ResponseResult().StatusCode(ApiStatusCode.Success).ToResult();
     }
 }
